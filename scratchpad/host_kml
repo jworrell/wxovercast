@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+from pykml.factory import KML_ElementMaker as KML
+from lxml import etree
+
+from flask import Flask, Response, request
+app = Flask(__name__)
+
+import wxovercast.database as wx_db
+engine = wx_db.engine
+
+QUERY = """
+SELECT airport_id, ST_Y(location::geometry), ST_X(location::geometry), raw_text FROM events 
+WHERE ST_DWithin(
+    (SELECT location FROM airports WHERE airport_id = %s), 
+    location, 
+    160934) 
+    
+AND AGE((select CURRENT_TIMESTAMP AT TIME ZONE 'UTC'), "time") < interval '60 minute' 
+ORDER BY airport_id, "time"
+"""
+
+@app.route("/obs.kml")
+def obs():
+    conn = engine.connect()
+    loc = request.args.get("loc")
+
+    if loc is None:
+        return "error!"
+    
+    obs = KML.Folder()
+    
+    for event in conn.execute(QUERY, loc):
+        airport_id, latitude, longitude, raw_text = event
+        latlon_str = "%s,%s" %(longitude, latitude)
+        
+        pm = KML.Placemark(
+                           KML.name(airport_id),
+                           KML.Point(
+                                     KML.coordinates(latlon_str)
+                                     ),
+                           KML.description(raw_text)
+                           )
+        
+        obs.append(pm)
+        
+    doc = KML.kml(obs)
+        
+    return Response(etree.tostring(doc, pretty_print=True), mimetype='application/vnd.google-earth.kml+xml')
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080, debug=True)

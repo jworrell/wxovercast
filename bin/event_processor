@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+
+import wxovercast.data.event_processor as event_processor
+
+event_processor.fetch_forever('localhost', 11300)

@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+import csv
+import psycopg2
+import os
+
+import wxovercast.settings as settings
+db_settings = settings.get("database")
+
+AIRPORTS_PATH = os.path.join(settings.DATA_PATH, "airports.csv")
+
+INSERT_STATEMENT = """
+INSERT INTO airports (airport_id, name, elevation, continent, country, region, location) 
+VALUES (%s, %s, %s, %s, %s, %s, ST_MakePoint(%s, %s))
+"""
+
+airports_csv = csv.reader(AIRPORTS_PATH)
+
+airports_list = []
+
+with open(AIRPORTS_PATH) as airports_file:
+    airports_reader = csv.reader(airports_file)
+    
+    airports_reader.next()
+    
+    for airport in airports_reader:
+        new_airport = {}
+        
+        airport_id = airport[1]
+        name = airport[3]
+        latitude = airport[4]
+        longitude = airport[5]
+        elevation = (float(airport[6]) * 0.3048) if airport[6] else None
+        continent = airport[7]
+        country = airport[8]
+        region = airport[9]
+        
+        insert_values = (airport_id, name, elevation, continent, country, region, longitude, latitude)
+        
+        airports_list.append(insert_values)
+        
+db_conn = psycopg2.connect(database=db_settings['database'],
+                           user=db_settings['username'], 
+                           password=db_settings['password'], 
+                           host=db_settings['host'],
+                           port=db_settings['port'])
+
+cur = db_conn.cursor()
+
+cur.execute("DELETE FROM airports")
+cur.executemany(INSERT_STATEMENT, airports_list)
+
+db_conn.commit()
+cur.close()
+db_conn.close()

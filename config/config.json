@@ -1,0 +1,21 @@
+{
+    "deploy":{
+        "host":"wxovercast.dyndns.org",
+        "path":"/opt/wxovercast",
+        "username":"wx_admin"
+    },
+    "database":{
+		"type":"postgresql",       
+        "host":"localhost",
+        "port":"5432",
+        "database":"wx_data",
+        "username":"wx_admin",
+        "password":""
+    },
+    "wxwire":{
+		"host":"oi.weatherwire.net",
+		"port":17000,
+        "username":"jworrell",
+        "password":""
+    }
+}

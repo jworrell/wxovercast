@@ -1,0 +1,36 @@
+<html>
+    <head>
+        <title>Minimal websocket application</title>
+        <script type="text/javascript" src="/static/jquery.min.js"></script>
+        <script type="text/javascript">
+        $(function() {
+            // Open up a connection to our server
+            var ws = new WebSocket("ws://wxovercast.dyndns.org:8080/stream");
+            //var ws = new WebSocket("ws://wxovercast.dyndns.org:10000/");
+
+            // What do we do when we get a message?
+            ws.onmessage = function(evt) {
+                $("#placeholder").append('<li>' + evt.data + '</li>');
+                
+                if ( $("#placeholder").children().length > 25) {
+                	$("#placeholder").children(':first-child').remove();
+                }
+            }
+            // Just update our conn_status field with the connection status
+            ws.onopen = function(evt) {
+                $('#conn_status').html('<b>Connected</b>');
+            }
+            ws.onerror = function(evt) {
+                $('#conn_status').html('<b>Error</b>');
+            }
+            ws.onclose = function(evt) {
+                $('#conn_status').html('<b>Closed</b>');
+            }
+        });
+    </script>
+    </head>
+    <body>
+        <div id="conn_status">Not Connected</div>
+        <ul id="placeholder" style="width:600px;height:300px;"></ul>
+    </body>
+</html>
